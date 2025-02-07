@@ -80,7 +80,7 @@ fi
 cmd+="-h $(hostname) "
 cmd+="--network none "
 cmd+="-w /linux "
-cmd+="-v $SRC:/linux:ro "
+cmd+="-v $SRC:/linux:ro,z "
 
 cmd+="$alternate_binds "
 cmd+="-e ARCH=$arch "
@@ -191,13 +191,13 @@ output_dir=$(get_output_dir "$script_base" "$subarch" "$distro" "$version" "$tas
 output_symlink=$(get_output_dir "$script_base" "$subarch" "$distro" "$version" "$task" "$DEFCONFIG" "$TARGETS" "$CLANG" "symlink")
 mkdir -p "$output_dir" || exit 1
 
-cmd+="-v $output_dir:/output:rw "
+cmd+="-v $output_dir:/output:rw,z "
 
 user=$(stat -c "%u:%g" $output_dir)
 cmd+="-u $user "
 
 if [[ -n "$CCACHE" ]]; then
-    cmd+="-v $CCACHE:/ccache "
+    cmd+="-v $CCACHE:/ccache:z "
     cmd+="-e CCACHE_DIR=/ccache "
     cmd+="-e CCACHE=1 "
 fi
