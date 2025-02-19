@@ -2,6 +2,7 @@ IMAGES += ppc64-rootfs.cpio.gz ppc64-novsx-rootfs.cpio.gz ppc64le-rootfs.cpio.gz
 IMAGES += ppc-rootfs.cpio.gz
 IMAGES += ubuntu16.04-cloudimg-powerpc.qcow2
 IMAGES += ubuntu16.04-cloudimg-ppc64el.qcow2
+IMAGES += ubuntu20.04-cloudimg-ppc64el.qcow2
 IMAGES += ubuntu21.04-cloudimg-ppc64el.qcow2
 IMAGES += ubuntu21.10-cloudimg-ppc64el.qcow2
 IMAGES += ubuntu22.04-cloudimg-ppc64el.qcow2
@@ -58,6 +59,11 @@ ubuntu18.04-cloudimg-ppc64el.qcow2:
 	chmod a-w $@
 	sha256sum $@ > $@.sum
 
+ubuntu20.04-cloudimg-ppc64el.qcow2:
+	$(call wget_ubuntu,$@,20.04,ubuntu-20.04-server-cloudimg-ppc64el.img)
+	chmod a-w $@
+	sha256sum $@ > $@.sum
+
 ubuntu21.04-cloudimg-ppc64el.qcow2:
 	$(call wget_ubuntu,$@,hirsute,ubuntu-21.04-server-cloudimg-ppc64el.img)
 	chmod a-w $@
@@ -70,6 +76,11 @@ ubuntu21.10-cloudimg-ppc64el.qcow2:
 
 ubuntu22.04-cloudimg-ppc64el.qcow2:
 	$(call wget_ubuntu,$@,jammy,ubuntu-22.04-server-cloudimg-ppc64el.img)
+	chmod a-w $@
+	sha256sum $@ > $@.sum
+
+ubuntu24.04-cloudimg-ppc64el.qcow2:
+	$(call wget_ubuntu,$@,24.04,ubuntu-24.04-server-cloudimg-ppc64el.img)
 	chmod a-w $@
 	sha256sum $@ > $@.sum
 
