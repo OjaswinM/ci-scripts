@@ -1,4 +1,6 @@
 import argparse
+import uuid
+import tarfile
 import atexit
 import os
 import sys
@@ -47,6 +49,9 @@ class QemuConfig:
         self.vmlinux = None
         self.cpuinfo = None
         self.bios = None
+        self.test_base_dir = None
+        self.test_name = None
+        self.test_tarball = None
 
         # Detect root disks if we're called from scripts/boot/qemu-xxx
         base = os.path.dirname(sys.argv[0])
@@ -64,6 +69,24 @@ class QemuConfig:
         self.vmlinux = get_vmlinux()
         self.modules_tarball = get_modules_tarball()
         self.selftests_tarball = get_selftests_tarball()
+
+    def valid_test_name(self, name):
+        """Check if the provided path is a valid test folder."""
+        base = os.path.dirname(sys.argv[0])
+        test_dir = f'{base}/../../tests'
+        
+        if not os.path.isdir(test_dir):
+            print(f'Test dir not found at: {test_dir}')         
+            sys.exit(1)
+        else:
+            self.test_base_dir = test_dir
+
+        valid_tests = {test for test in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, test))}
+        
+        if name not in valid_tests:
+            raise argparse.ArgumentTypeError(f"Invalid test name. Must be one of: {', '.join(valid_tests)}")
+        
+        return name
 
     def configure_from_args(self, orig_args):
         parser = argparse.ArgumentParser()
@@ -89,6 +112,7 @@ class QemuConfig:
         parser.add_argument('--kernel-path', type=str, help='Path to kernel (vmlinux)')
         parser.add_argument('--modules-path', type=str, help='Path to modules tarball')
         parser.add_argument('--selftests-path', type=str, help='Path to selftests tarball')
+        parser.add_argument('--test-name', type=self.valid_test_name, help='Path to the test directory in ci-scripts/tests')
         parser.add_argument('--bios', type=str, help='BIOS option for qemu')
         parser.add_argument('--cap', dest='machine_caps',  type=str, default=[], action='append', help='Machine caps')
         parser.add_argument('--qemu-path', dest='qemu_path', type=str, help='Path to qemu bin directory')
@@ -151,6 +175,9 @@ class QemuConfig:
 
         if args.selftests_path:
             self.selftests_tarball = args.selftests_path
+
+        if args.test_name:
+            self.test_name = args.test_name
 
         self.compat_rootfs = args.compat_rootfs
         self.use_vof = args.use_vof
@@ -338,6 +365,31 @@ class QemuConfig:
 
         if self.selftests_tarball:
             self.selftests_drive = self.add_drive(f'file={self.selftests_tarball},format=raw,readonly=on')
+
+        if self.test_name:
+            if not os.path.exists(self.test_base_dir):
+                logging.error(f"Test directory '{self.test_base_dir}' does not exist.")
+                raise FileNotFoundError(f"Base directory '{self.test_base_dir}' does not exist.")
+
+            test_dir = os.path.join(self.test_base_dir, self.test_name)
+            if not os.path.isdir(test_dir):
+                logging.error(f"'{test_dir}' is not a directory.")
+                raise NotADirectoryError(f"'{test_dir}' is not a directory.")
+
+            tar_filename = f"{self.test_name}_{uuid.uuid4().hex[:7]}.tar"
+            tar_path = os.path.join("/tmp", tar_filename)
+
+            try:
+                with tarfile.open(tar_path, "w") as tar:
+                    tar.add(test_dir, arcname=self.test_name)
+                self.test_tarball = tar_path
+                logging.info(f"Test directory '{test_dir}' archived to '{self.test_tarball}'")
+            except Exception as e:
+                logging.error(f"Failed to create tarball: {e}")
+                raise
+
+            self.test_drive = self.add_drive(f"file={self.test_tarball},format=raw,readonly=on")
+            
 
     def add_drive(self, args):
         drive_id = self.next_drive
@@ -572,6 +624,26 @@ def qemu_main(qconf):
         p.cmd('mkdir -p /var/tmp/selftests')
         p.send(f'cd /var/tmp/selftests; cat /dev/vd{qconf.selftests_drive} | zcat | tar --strip-components=1 -xf -; cd -')
         p.expect_prompt(timeout=boot_timeout)
+
+    if qconf.test_tarball:
+        # extract the test folder in qemu
+        p.cmd('mkdir -p /var/tmp/test')
+        p.send(f'cd /var/tmp/test; cat /dev/vd{qconf.test_drive} | tar  -xf -; cd {self.test_name}')
+        p.expect_prompt(timeout=boot_timeout)
+
+        #remove the temp tarball once copied in VM
+        os.remove(self.test_tarball)
+        self.test_tarball = None
+
+        # set up package manager and install make
+        if 'ubuntu' in self.cloud_image or 'debian' in self.cloud_image:
+            p.send(f'apt update -y; apt install make')
+        elif 'fedora' in self.cloud_image:
+            p.send(f'dnf update -y; dnf install make')
+        p.expect_prompt(timeout=boot_timeout)
+
+        # prepare the test
+        p.send(f"make prepare")
 
     if qconf.net_tests:
         qemu_net_setup(p)
