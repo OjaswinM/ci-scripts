@@ -286,7 +286,7 @@ class QemuConfig:
             self.user = 'root'
 
             if 'ubuntu' in self.cloud_image:
-                self.prompt = 'root@ubuntu:~#'
+                self.prompt = 'root@ubuntu:'
             elif 'fedora' in self.cloud_image:
                 self.prompt = r'\[root@fedora ~\]#'
             elif 'debian' in self.cloud_image:
