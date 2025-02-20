@@ -104,7 +104,7 @@ class QemuConfig:
         parser.add_argument('--quiet', action='store_true', help="Reduce output")
         parser.add_argument('--net-tests', action='store_true', help="Run network tests")
         parser.add_argument('--logpath', type=str, help="Alternate log path")
-        parser.add_argument('--pexpect-timeout', type=int, help="pexepect timeout in seconds (default 60)")
+        parser.add_argument('--pexpect-timeout', type=str, help="pexepect timeout in seconds (default 60)")
         parser.add_argument('--mount', dest='mounts',  type=str, default=[], action='append', help='Host mount points')
         parser.add_argument('--mount-cmd', dest='mount_command',  type=str, help="Command to run in mount point (default 'run')")
         parser.add_argument('--cmdline', type=str, help='Kernel command line arguments')
@@ -126,7 +126,7 @@ class QemuConfig:
             self.pexpect_timeout = 0
 
         if args.pexpect_timeout:
-            self.pexpect_timeout = args.pexpect_timeout
+            self.pexpect_timeout = int(args.pexpect_timeout,10)
 
         if args.interactive:
             self.interactive = True
@@ -166,7 +166,7 @@ class QemuConfig:
 
         if args.modules_path:
             self.modules_tarball = args.modules_path
-            
+
         if args.qemu_path:
             self.qemu_path = args.qemu_path
 
