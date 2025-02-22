@@ -413,21 +413,29 @@ class QemuConfig:
         rdpath = self.root_disk_path
         img_path = f'{rdpath}/{self.cloud_image}'
 
+        # qemu-img gives random issues when we are not in
+        # the dir where the output image will be
+        cwd = os.getcwd()
+        os.chdir(rdpath)
+
         if self.cloud_image.endswith('.qcow2'):
             # Create snapshot image
             pid = os.getpid()
-            dst = f'{rdpath}/qemu-temp-{pid}.img'
-            cmd = f'qemu-img create -f qcow2 -F qcow2 -b {img_path} {dst}'.split()
+            dst = f'qemu-temp-{pid}.img'
+            cmd = f'qemu-img create -f qcow2 -F qcow2 -b {self.cloud_image} {dst}'.split()
+            logging.info(cmd)
             subprocess.run(cmd, check=True)
-            atexit.register(lambda: os.unlink(dst))
-            img_path = dst
+            atexit.register(lambda: os.unlink(img_path))
+            img_path = f"{rdpath}/{dst}"
             format = 'qcow2'
         else:
             format = 'raw'
 
+        os.chdir(cwd)
+
         cloud_drive = self.add_drive(f'file={img_path},format={format}')
         self.add_drive(f'file={rdpath}/cloud-init-user-data.img,format=raw,readonly=on')
-        
+
         if 'ubuntu' in self.cloud_image:
             self.cmdline.insert(0, f'root=/dev/vd{cloud_drive}1')
         elif 'fedora34' in self.cloud_image or 'debian' in self.cloud_image:
