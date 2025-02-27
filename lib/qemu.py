@@ -9,6 +9,7 @@ import logging
 from utils import *
 from pexpect_utils import PexpectHelper, standard_boot, ping_test, wget_test
 import qemu_callbacks
+from application_tests.factory import *
 
 
 class QemuConfig:
@@ -422,11 +423,22 @@ class QemuConfig:
             # Create snapshot image
             pid = os.getpid()
             dst = f'qemu-temp-{pid}.img'
-            cmd = f'qemu-img create -f qcow2 -F qcow2 -b {self.cloud_image} {dst}'.split()
-            logging.info(cmd)
-            subprocess.run(cmd, check=True)
-            atexit.register(lambda: os.unlink(img_path))
+
+            if self.test_name:
+                # some tests need VMs with more disk space like avocado.
+                # hence create the image accordingly
+                cmd1 = f'qemu-img create -f qcow2 -F qcow2 -b {self.cloud_image} {dst} 30G'.split()
+                cmd2 = f'qemu-img resize {dst} 30G'.split()
+                logging.info(cmd1)
+                logging.info(cmd2)
+                subprocess.run(cmd1, check=True)
+                subprocess.run(cmd2, check=True)
+            else:
+                cmd = f'qemu-img create -f qcow2 -F qcow2 -b {self.cloud_image} {dst}'.split()
+                logging.info(cmd)
+                subprocess.run(cmd, check=True)
             img_path = f"{rdpath}/{dst}"
+            atexit.register(lambda: os.unlink(img_path))
             format = 'qcow2'
         else:
             format = 'raw'
@@ -636,22 +648,24 @@ def qemu_main(qconf):
     if qconf.test_tarball:
         # extract the test folder in qemu
         p.cmd('mkdir -p /var/tmp/test')
-        p.send(f'cd /var/tmp/test; cat /dev/vd{qconf.test_drive} | tar  -xf -; cd {self.test_name}')
-        p.expect_prompt(timeout=boot_timeout)
+        p.cmd(f'cd /var/tmp/test; cat /dev/vd{qconf.test_drive} | tar  -xf -; cd {qconf.test_name}')
+        p.cmd(f'cd /var/tmp/test/{qconf.test_name}')
 
         #remove the temp tarball once copied in VM
-        os.remove(self.test_tarball)
-        self.test_tarball = None
+        atexit.register(lambda: os.unlink(qconf.test_tarball))
 
         # set up package manager and install make
-        if 'ubuntu' in self.cloud_image or 'debian' in self.cloud_image:
-            p.send(f'apt update -y; apt install make')
-        elif 'fedora' in self.cloud_image:
-            p.send(f'dnf update -y; dnf install make')
-        p.expect_prompt(timeout=boot_timeout)
+        if 'ubuntu' in qconf.cloud_image or 'debian' in qconf.cloud_image:
+            p.cmd(f'apt update -y')
+            p.cmd(f'apt install -y make')
+        elif 'fedora' in qconf.cloud_image:
+            p.cmd(f'dnf update -y; dnf install -y make')
 
-        # prepare the test
-        p.send(f"make prepare")
+        logging.info(f"Starting {qconf.test_name} test preparation...")
+        test_runner = create_test_instance(qconf.test_name, p)
+
+        test_runner.setup()
+        test_runner.test()
 
     if qconf.net_tests:
         qemu_net_setup(p)
