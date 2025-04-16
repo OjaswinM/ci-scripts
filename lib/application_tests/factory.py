@@ -3,7 +3,7 @@ import importlib.util
 import logging
 import sys
 
-def create_test_instance(test_name, p):
+def create_test_instance(test_name, test_args, p):
     """
     Dynamically imports the test class from tests/<test_name>/test.py
     and returns an instance. If test.py is not present return instance
@@ -39,8 +39,8 @@ def create_test_instance(test_name, p):
 
         # Find a class that inherits from GenericTest
         if isinstance(obj, type) and issubclass(obj, GenericTest) and obj is not GenericTest:
-            return obj(test_name, p)
+            return obj(test_name, test_args, p)
 
 
     logging.error(f"Test specific implementation not found. Running generic test")
-    return GenericTest(test_name, p)
+    return GenericTest(test_name, test_args, p)
