@@ -76,34 +76,34 @@ class QemuConfig:
         """Check if the provided path is a valid test folder."""
         base = os.path.dirname(sys.argv[0])
         test_dir = f'{base}/../../tests'
-        
+
         if not os.path.isdir(test_dir):
-            print(f'Test dir not found at: {test_dir}')         
+            print(f'Test dir not found at: {test_dir}')
             sys.exit(1)
         else:
             self.test_base_dir = test_dir
 
         valid_tests = {test for test in os.listdir(test_dir) if os.path.isdir(os.path.join(test_dir, test))}
-        
+
         if name not in valid_tests:
             raise argparse.ArgumentTypeError(f"Invalid test name. Must be one of: {', '.join(valid_tests)}")
-        
+
         return name
-    
+
     def valid_test_args(self, args):
         # TODO: Source these file systems from avodaco misc tests repository instead of hardcoding
         supported_fs = ['ext2', 'ext4', 'xfs', 'btrfs']
 
         # Check if there are at least two arguments: first is the fs type, second is the config file
-        if len(self.test_args.split(' ')) < 2:
+        if len(args.split(' ')) < 2:
             raise ValueError("At least two arguments are required: filesystem type and config file")
 
-        avocado_fs_type = self.test_args.split(' ')[0]
+        avocado_fs_type = args.split(' ')[0]
         if avocado_fs_type not in supported_fs:
             raise ValueError(f"Invalid filesystem type '{avocado_fs_type}'. Must be one of: {', '.join(supported_fs)}")
 
         # TODO: make sure the second arg is always the config file
-        avocado_yaml_config = self.test_args.split(' ')[1:]
+        avocado_yaml_config = args.split(' ')[1:]
 
         print(f"Running avocado test with filesystem type '{avocado_fs_type}' and config file '{avocado_yaml_config}'")
         return args
