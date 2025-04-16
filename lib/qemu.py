@@ -6,6 +6,7 @@ import os
 import sys
 import subprocess
 import logging
+import tempfile
 from utils import *
 from pexpect_utils import PexpectHelper, standard_boot, ping_test, wget_test
 import qemu_callbacks
@@ -89,6 +90,13 @@ class QemuConfig:
         
         return name
 
+    def valid_test_op_mnt(self, path):
+        if os.path.isdir(path):
+            return path
+        else:
+            raise argparse.ArgumentTypeError(f"Invalid mount point: '{path}' is not a directory.")
+
+
     def configure_from_args(self, orig_args):
         parser = argparse.ArgumentParser()
         parser.add_argument('-v', dest='verbose', action='store_true', help='Verbose logging')
@@ -114,6 +122,7 @@ class QemuConfig:
         parser.add_argument('--modules-path', type=str, help='Path to modules tarball')
         parser.add_argument('--selftests-path', type=str, help='Path to selftests tarball')
         parser.add_argument('--test-name', type=self.valid_test_name, help='Path to the test directory in ci-scripts/tests')
+        parser.add_argument('--test-output-dir', type=self.valid_test_op_mnt, help='Path to a folder where test will store the logs')
         parser.add_argument('--bios', type=str, help='BIOS option for qemu')
         parser.add_argument('--cap', dest='machine_caps',  type=str, default=[], action='append', help='Machine caps')
         parser.add_argument('--qemu-path', dest='qemu_path', type=str, help='Path to qemu bin directory')
@@ -179,6 +188,12 @@ class QemuConfig:
 
         if args.test_name:
             self.test_name = args.test_name
+
+            if args.test_output_dir:
+                self.test_output_dir = args.test_output_dir
+            else:
+                self.test_output_dir = tempfile.mkdtemp(prefix="test-output-", dir="/tmp")
+
 
         self.compat_rootfs = args.compat_rootfs
         self.use_vof = args.use_vof
@@ -336,16 +351,22 @@ class QemuConfig:
 
             self.initrd = f'{subarch}-rootfs.cpio.gz'
 
-        if self.host_mounts:
+        if self.host_mounts or self.test_output_dir:
             i = 0
+            if self.machine_is('powernv'):
+                bus = f',bus=pcie.{i+2}'
+            else:
+                bus = ''
+
             for path in self.host_mounts:
-                if self.machine_is('powernv'):
-                    bus = f',bus=pcie.{i+2}'
-                else:
-                    bus = ''
 
                 self.extra_args.append(f'-fsdev local,id=fsdev{i},path={path},security_model=none')
                 self.extra_args.append(f'-device virtio-9p-pci,fsdev=fsdev{i},mount_tag=host{i}{bus}')
+                i += 1
+
+            if self.test_output_dir:
+                self.extra_args.append(f'-fsdev local,id=fsdev{i},path={self.test_output_dir},security_model=none')
+                self.extra_args.append(f'-device virtio-9p-pci,fsdev=fsdev{i},mount_tag=testdir{bus}')
                 i += 1
 
         if self.machine_is('pseries'):
@@ -607,6 +628,10 @@ def qemu_main(qconf):
             logging.info("To mount host mount points run:")
             logging.info(" mkdir -p /mnt; mount -t 9p -o version=9p2000.L,trans=virtio host0 /mnt")
 
+        if qconf.test_output_dir:
+            logging.info("To mount test otuput_path run")
+            logging.info(" mkdir -p /mnt; mount -t 9p -o version=9p2000.L,trans=virtio testdir /mnt")
+
         rc = subprocess.run(cmd, shell=True).returncode
         return rc == 0
 
@@ -645,6 +670,29 @@ def qemu_main(qconf):
         p.send(f'cd /var/tmp/selftests; cat /dev/vd{qconf.selftests_drive} | zcat | tar --strip-components=1 -xf -; cd -')
         p.expect_prompt(timeout=boot_timeout)
 
+    if qconf.net_tests:
+        qemu_net_setup(p)
+        ping_test(p)
+
+    if qconf.host_mounts:
+        # Clear timeout, we don't know how long it will take
+        setup_timeout(0)
+
+        for i in range(0, len(qconf.host_mounts)):
+            p.cmd(f'mkdir -p /mnt/host{i}')
+            p.cmd(f'mount -t 9p -o version=9p2000.L,trans=virtio host{i} /mnt/host{i}')
+
+        for i in range(0, len(qconf.host_mounts)):
+            p.send(f'[ -x /mnt/host{i}/{qconf.host_command} ] && (cd /mnt/host{i} && ./{qconf.host_command})')
+            p.expect_prompt(timeout=None) # no timeout
+
+    guest_output_dir = ""
+
+    if qconf.test_output_dir:
+        guest_output_dir = "/mnt/testdir"
+        p.cmd(f'mkdir -p {guest_output_dir}')
+        p.cmd(f'mount -t 9p -o version=9p2000.L,trans=virtio testdir {guest_output_dir}')
+
     if qconf.test_tarball:
         # extract the test folder in qemu
         p.cmd('mkdir -p /var/tmp/test')
@@ -664,24 +712,16 @@ def qemu_main(qconf):
         logging.info(f"Starting {qconf.test_name} test preparation...")
         test_runner = create_test_instance(qconf.test_name, p)
 
+        # p.cmd("mkdir -p ~/avocado/job-results/latest")
+        # p.cmd("echo Hello world > ~/avocado/job-results/latest/log.txt")
+
         test_runner.setup()
         test_runner.test()
 
-    if qconf.net_tests:
-        qemu_net_setup(p)
-        ping_test(p)
+        # avocado will copy xfstest logs to qconf.test_output_dir. All we need
+        # to do is copy avocado logs the dir so we can retrieve them later.
+        test_runner.collect_logs(guest_output_dir)
 
-    if qconf.host_mounts:
-        # Clear timeout, we don't know how long it will take
-        setup_timeout(0)
-
-        for i in range(0, len(qconf.host_mounts)):
-            p.cmd(f'mkdir -p /mnt/host{i}')
-            p.cmd(f'mount -t 9p -o version=9p2000.L,trans=virtio host{i} /mnt/host{i}')
-
-        for i in range(0, len(qconf.host_mounts)):
-            p.send(f'[ -x /mnt/host{i}/{qconf.host_command} ] && (cd /mnt/host{i} && ./{qconf.host_command})')
-            p.expect_prompt(timeout=None) # no timeout
 
     for callback in qconf.callbacks:
         logging.info("Running callback ...")

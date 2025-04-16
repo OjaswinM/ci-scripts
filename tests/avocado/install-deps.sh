@@ -30,7 +30,8 @@ pip3 install avocado-framework-plugin-varianter-yaml-to-mux
 #avocado misc test download
 name=avocado-misc-tests
 tarball=$name.zip
-url=https://github.com/avocado-framework-tests/avocado-misc-tests/archive/refs/heads/master.zip
+#url=https://github.com/avocado-framework-tests/avocado-misc-tests/archive/refs/heads/master.zip
+url=https://github.com/OjaswinM/avocado-misc-tests/archive/refs/heads/master.zip
 
 curl -L -o $tarball.tmp $url
 mv $tarball.tmp $tarball

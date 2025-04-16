@@ -25,7 +25,7 @@ class GenericTest:
         """
         self.p.cmd("make test")
 
-    def collect_log(self, *args, **kwargs):
+    def collect_logs(self, *args, **kwargs):
         """
         Collect logs once the test run is done
         """
