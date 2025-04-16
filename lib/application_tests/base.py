@@ -12,9 +12,10 @@ class GenericTest:
     a test wants their logic they need to define a child class in
     tests/<test_name>/test.py. Refer tests/avocado/test.py for reference.
     """
-    def __init__(self, name, p):
+    def __init__(self, name, test_args, p):
         self.name = name
         self.p = p
+        self.test_args = test_args
 
     def setup(self):
         self.p.cmd("make prepare")
@@ -23,7 +24,7 @@ class GenericTest:
         """
         Test callback is called in the VM to run the test.
         """
-        self.p.cmd("make test")
+        self.p.cmd(f"make test {self.test_args}")
 
     def collect_log(self, *args, **kwargs):
         """

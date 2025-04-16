@@ -88,6 +88,24 @@ class QemuConfig:
             raise argparse.ArgumentTypeError(f"Invalid test name. Must be one of: {', '.join(valid_tests)}")
         
         return name
+    
+    def valid_test_args(self, args):
+        # TODO: Source these file systems from avodaco misc tests repository instead of hardcoding
+        supported_fs = ['ext2', 'ext4', 'xfs', 'btrfs']
+
+        # Check if there are at least two arguments: first is the fs type, second is the config file
+        if len(self.test_args.split(' ')) < 2:
+            raise ValueError("At least two arguments are required: filesystem type and config file")
+
+        avocado_fs_type = self.test_args.split(' ')[0]
+        if avocado_fs_type not in supported_fs:
+            raise ValueError(f"Invalid filesystem type '{avocado_fs_type}'. Must be one of: {', '.join(supported_fs)}")
+
+        # TODO: make sure the second arg is always the config file
+        avocado_yaml_config = self.test_args.split(' ')[1:]
+
+        print(f"Running avocado test with filesystem type '{avocado_fs_type}' and config file '{avocado_yaml_config}'")
+        return args
 
     def configure_from_args(self, orig_args):
         parser = argparse.ArgumentParser()
@@ -114,6 +132,7 @@ class QemuConfig:
         parser.add_argument('--modules-path', type=str, help='Path to modules tarball')
         parser.add_argument('--selftests-path', type=str, help='Path to selftests tarball')
         parser.add_argument('--test-name', type=self.valid_test_name, help='Path to the test directory in ci-scripts/tests')
+        parser.add_argument('--test-args', type=self.valid_test_args, help='Test type and configuration for the test provided in --test-name')
         parser.add_argument('--bios', type=str, help='BIOS option for qemu')
         parser.add_argument('--cap', dest='machine_caps',  type=str, default=[], action='append', help='Machine caps')
         parser.add_argument('--qemu-path', dest='qemu_path', type=str, help='Path to qemu bin directory')
@@ -179,6 +198,9 @@ class QemuConfig:
 
         if args.test_name:
             self.test_name = args.test_name
+
+        if args.test_args:
+            self.test_args = args.test_args
 
         self.compat_rootfs = args.compat_rootfs
         self.use_vof = args.use_vof
@@ -662,7 +684,7 @@ def qemu_main(qconf):
             p.cmd(f'dnf update -y; dnf install -y make')
 
         logging.info(f"Starting {qconf.test_name} test preparation...")
-        test_runner = create_test_instance(qconf.test_name, p)
+        test_runner = create_test_instance(qconf.test_name, qconf.test_args, p)
 
         test_runner.setup()
         test_runner.test()
