@@ -12,7 +12,11 @@ class AvocadoTest(GenericTest):
 
     def test(self):
         logging.info(f"Overriding test() of GenericTest")
-        self.p.cmd(f"make test {self.test_args}")
+
+        fs = self.test_args.split(' ')[0]
+        config = self.test_args.split(' ')[1]
+
+        self.p.cmd(f"make test FS={fs} CONFIG={config}")
         #self.p.cmd("cat /root/avocado/job-results/job.log")
 
     def collect_logs(self, output_dir):

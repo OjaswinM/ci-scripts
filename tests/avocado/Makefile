@@ -8,7 +8,7 @@ prepare:
 	@./install-deps.sh
 
 test:
-	+@./test.sh
+	+@./test.sh $(FS) $(CONFIG)
 
 clean:
 	rm -rf xfstests log

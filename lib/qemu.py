@@ -95,18 +95,18 @@ class QemuConfig:
         supported_fs = ['ext2', 'ext4', 'xfs', 'btrfs']
 
         # Check if there are at least two arguments: first is the fs type, second is the config file
-        if len(args.split(' ')) < 2:
+        if len(args.split(":")) < 2:
             raise ValueError("At least two arguments are required: filesystem type and config file")
 
-        avocado_fs_type = args.split(' ')[0]
+        avocado_fs_type = args.split(":")[0]
         if avocado_fs_type not in supported_fs:
             raise ValueError(f"Invalid filesystem type '{avocado_fs_type}'. Must be one of: {', '.join(supported_fs)}")
 
         # TODO: make sure the second arg is always the config file
-        avocado_yaml_config = args.split(' ')[1:]
+        avocado_yaml_config = args.split(":")[1]
 
         print(f"Running avocado test with filesystem type '{avocado_fs_type}' and config file '{avocado_yaml_config}'")
-        return args
+        return f"{avocado_fs_type} {avocado_yaml_config}"
 
     def valid_test_op_mnt(self, path):
         if os.path.isdir(path):
@@ -726,9 +726,9 @@ def qemu_main(qconf):
         # set up package manager and install make
         if 'ubuntu' in qconf.cloud_image or 'debian' in qconf.cloud_image:
             p.cmd(f'apt update -y')
-            p.cmd(f'apt install -y make')
+            p.cmd(f'apt install -y make zip unzip')
         elif 'fedora' in qconf.cloud_image:
-            p.cmd(f'dnf update -y; dnf install -y make')
+            p.cmd(f'dnf update -y; dnf install -y make zip unzip')
 
         logging.info(f"Starting {qconf.test_name} test preparation...")
         test_runner = create_test_instance(qconf.test_name, qconf.test_args, p)
