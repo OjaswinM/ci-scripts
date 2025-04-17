@@ -469,8 +469,8 @@ class QemuConfig:
             if self.test_name:
                 # some tests need VMs with more disk space like avocado.
                 # hence create the image accordingly
-                cmd1 = f'qemu-img create -f qcow2 -F qcow2 -b {self.cloud_image} {dst} 30G'.split()
-                cmd2 = f'qemu-img resize {dst} 30G'.split()
+                cmd1 = f'qemu-img create -f qcow2 -F qcow2 -b {self.cloud_image} {dst} 50G'.split()
+                cmd2 = f'qemu-img resize {dst} 50G'.split()
                 logging.info(cmd1)
                 logging.info(cmd2)
                 subprocess.run(cmd1, check=True)
