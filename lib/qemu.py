@@ -15,6 +15,7 @@ from application_tests.factory import *
 
 class QemuConfig:
     def __init__(self, machine):
+        self.uuid = uuid.uuid4().hex[:8]
         self.machine = machine
         self.machine_caps = []
         self.cpu = None
@@ -26,7 +27,7 @@ class QemuConfig:
         self.host_mounts = []
         self.cmdline = ['noreboot']
         self.pexpect_timeout = 60
-        self.logpath = 'console.log'
+        self.logpath = f'/tmp/console-{self.uuid}.log'
         self.quiet = False
         self.net = None
         self.net_tests = False
@@ -419,7 +420,7 @@ class QemuConfig:
                 logging.error(f"'{test_dir}' is not a directory.")
                 raise NotADirectoryError(f"'{test_dir}' is not a directory.")
 
-            tar_filename = f"{self.test_name}_{uuid.uuid4().hex[:7]}.tar"
+            tar_filename = f"{self.test_name}_{self.uuid}.tar"
             tar_path = os.path.join("/tmp", tar_filename)
 
             try:
