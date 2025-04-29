@@ -138,25 +138,43 @@ if [[ -n "$REPRODUCIBLE" ]]; then
 fi
 
 if [[ "$task" == "kernel" ]]; then
-    if [[ -z "$DEFCONFIG" ]]; then
-        case "$subarch" in
-        alpha)  ;&
-        arm64)  ;&
-        riscv)  ;&
-        s390)   DEFCONFIG=defconfig ;;
-        arc)    DEFCONFIG=axs103_smp_defconfig ;;
-        arm)    DEFCONFIG=versatile_defconfig ;;
-        i686)   DEFCONFIG=i386_defconfig ;;
-        m68k)   DEFCONFIG=multi_defconfig ;;
-        mips)   DEFCONFIG=32r6_defconfig ;;
-        mips64) DEFCONFIG=64r6_defconfig ;;
-        parisc) DEFCONFIG=generic-32bit_defconfig ;;
-        sh)     DEFCONFIG=shx3_defconfig ;;
-        sparc)  DEFCONFIG=sparc64_defconfig ;;
-        *)      DEFCONFIG="${subarch}_defconfig" ;;
-        esac
+    if [[ -n "$CUSTOM_CONFIG" && -n "$DEFCONFIG" ]]; then
+        echo "Error: Cannot specify both CUSTOM_CONFIG and DEFCONFIG."
+        exit 1
     fi
-    cmd+="-e DEFCONFIG=$DEFCONFIG "
+
+    if [[ -n "$CUSTOM_CONFIG" ]]; then
+        if [[ -f "$CUSTOM_CONFIG" ]]; then
+		if [[ "${CUSTOM_CONFIG:0:1}" != "/" ]]; then
+		    echo "Error: CUSTOM_CONFIG must be an absolute path."
+		    exit 1
+fi
+            cmd+="-v $CUSTOM_CONFIG:/config.txt "
+        else
+            echo "Error: Custom config file '$CUSTOM_CONFIG' not found."
+            exit 1
+        fi
+    else
+        if [[ -z "$DEFCONFIG" ]]; then
+            case "$subarch" in
+                alpha)  ;&
+                arm64)  ;&
+                riscv)  ;&
+                s390)   DEFCONFIG=defconfig ;;
+                arc)    DEFCONFIG=axs103_smp_defconfig ;;
+                arm)    DEFCONFIG=versatile_defconfig ;;
+                i686)   DEFCONFIG=i386_defconfig ;;
+                m68k)   DEFCONFIG=multi_defconfig ;;
+                mips)   DEFCONFIG=32r6_defconfig ;;
+                mips64) DEFCONFIG=64r6_defconfig ;;
+                parisc) DEFCONFIG=generic-32bit_defconfig ;;
+                sh)     DEFCONFIG=shx3_defconfig ;;
+                sparc)  DEFCONFIG=sparc64_defconfig ;;
+                *)      DEFCONFIG="${subarch}_defconfig" ;;
+            esac
+        fi
+        cmd+="-e DEFCONFIG=$DEFCONFIG "
+    fi
 
     if [[ -n "$MERGE_CONFIG" ]]; then
 	cmd+="-e MERGE_CONFIG=$MERGE_CONFIG "

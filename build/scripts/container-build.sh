@@ -58,7 +58,10 @@ if [[ "$1" == "kernel" ]]; then
         (set -x; make $verbose $quiet $llvm "$cc" clean)
     fi
 
-    if [[ "$DEFCONFIG" == .config* || "$DEFCONFIG" == *.config ]]; then
+    if [[ -n "$CUSTOM_CONFIG" ]]
+    then
+    	cp /config.txt /output/.config
+    elif [[ "$DEFCONFIG" == .config* || "$DEFCONFIG" == *.config ]]; then
         echo "## Using existing config $DEFCONFIG"
         cp -f "$DEFCONFIG" /output/.config || exit 1
     else
