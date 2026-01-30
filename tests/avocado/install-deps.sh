@@ -24,8 +24,8 @@ fi
 # avocado setup
 python3 -m venv venv
 source venv/bin/activate
-pip3 install avocado-framework
-pip3 install avocado-framework-plugin-varianter-yaml-to-mux
+pip3 install avocado-framework==111
+pip3 install avocado-framework-plugin-varianter-yaml-to-mux==111
 
 #avocado misc test download
 name=avocado-misc-tests
