@@ -17,6 +17,19 @@ class GenericTest:
         self.p = p
         self.test_args = test_args
 
+    def preboot(self, qconf):
+        """
+        Called before VM boot to allow test to modify qemu configuration.
+        Tests can override this to add custom mounts, modify cmdline, etc.
+
+        Args:
+            qconf: QemuConfig object that can be modified
+
+        Returns:
+            None
+        """
+        pass
+
     def setup(self):
         self.p.cmd("make prepare")
 
