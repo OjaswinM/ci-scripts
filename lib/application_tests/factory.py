@@ -26,7 +26,7 @@ def create_test_instance(test_name, test_args, p):
 
     if not os.path.exists(module_path):
         logging.error(f"Test specific implementation not found. Running generic test")
-        return GenericTest(test_name, p)
+        return GenericTest(test_name, test_args, p)
 
     module_name = f"tests.{test_name}.test"
     spec = importlib.util.spec_from_file_location(module_name, module_path)
