@@ -15,7 +15,40 @@ class GenericTest:
     def __init__(self, name, test_args, p):
         self.name = name
         self.p = p
-        self.test_args = test_args
+        self.test_args = test_args  # Dict of raw args from --test-args
+        self.parsed_args = {}  # Dict of validated/parsed args
+
+    def parse_common_args(self):
+        """
+        Populate parsed_args with the raw --test-args values.
+        """
+        self.parsed_args = self.test_args.copy()
+
+    def parse_args(self):
+        """
+        Override this method to validate and parse test-specific arguments.
+
+        Should populate self.parsed_args with validated values.
+        Raise ValueError if required args are missing or invalid.
+
+        Example:
+            def parse_args(self):
+                self.parse_common_args()
+
+                # Check required args
+                if 'config' not in self.parsed_args:
+                    raise ValueError("Missing required argument: config")
+
+                # Validate and store
+                self.parsed_args['config'] = self.parsed_args['config']
+
+                # Optional args with defaults
+                self.parsed_args['timeout'] = int(self.parsed_args.get('timeout', 3600))
+
+        Returns:
+            None
+        """
+        self.parse_common_args()
 
     def preboot(self, qconf):
         """

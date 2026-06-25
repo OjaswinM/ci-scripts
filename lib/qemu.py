@@ -91,23 +91,35 @@ class QemuConfig:
 
         return name
 
-    def valid_test_args(self, args):
-        # TODO: Source these file systems from avodaco misc tests repository instead of hardcoding
-        supported_fs = ['ext2', 'ext4', 'xfs', 'btrfs']
+    def valid_test_args(self, args_string):
+        """
+        Parse comma-separated key=value pairs.
+        Format: key1=val1,key2=val2,key3=val3
 
-        # Check if there are at least two arguments: first is the fs type, second is the config file
-        if len(args.split(":")) < 2:
-            raise ValueError("At least two arguments are required: filesystem type and config file")
+        Returns dict of parsed arguments.
+        """
+        if not args_string:
+            return {}
 
-        avocado_fs_type = args.split(":")[0]
-        if avocado_fs_type not in supported_fs:
-            raise ValueError(f"Invalid filesystem type '{avocado_fs_type}'. Must be one of: {', '.join(supported_fs)}")
+        args_dict = {}
+        try:
+            for pair in args_string.split(','):
+                if '=' not in pair:
+                    raise ValueError(f"Invalid argument format: '{pair}'. Expected 'key=value'")
 
-        # TODO: make sure the second arg is always the config file
-        avocado_yaml_config = args.split(":")[1]
+                key, value = pair.split('=', 1)  # Split only on first '='
+                key = key.strip()
+                value = value.strip()
 
-        print(f"Running avocado test with filesystem type '{avocado_fs_type}' and config file '{avocado_yaml_config}'")
-        return f"{avocado_fs_type} {avocado_yaml_config}"
+                if not key:
+                    raise ValueError("Empty key in argument pair")
+
+                args_dict[key] = value
+
+        except Exception as e:
+            raise argparse.ArgumentTypeError(f"Invalid test-args format: {e}")
+
+        return args_dict
 
     def valid_test_op_mnt(self, path):
         if os.path.isdir(path):
@@ -142,7 +154,7 @@ class QemuConfig:
         parser.add_argument('--selftests-path', type=str, help='Path to selftests tarball')
         parser.add_argument('--test-name', type=self.valid_test_name, help='Path to the test directory in ci-scripts/tests')
         parser.add_argument('--test-output-dir', type=self.valid_test_op_mnt, help='Path to a folder where test will store the logs')
-        parser.add_argument('--test-args', type=self.valid_test_args, help='Test type and configuration for the test provided in --test-name')
+        parser.add_argument('--test-args', type=self.valid_test_args, help='Comma-separated key=value pairs for test configuration (e.g., "key1=val1,key2=val2"). See test README for required args.')
         parser.add_argument('--bios', type=str, help='BIOS option for qemu')
         parser.add_argument('--cap', dest='machine_caps',  type=str, default=[], action='append', help='Machine caps')
         parser.add_argument('--qemu-path', dest='qemu_path', type=str, help='Path to qemu bin directory')
@@ -733,9 +745,7 @@ def qemu_main(qconf):
 
         logging.info(f"Starting {qconf.test_name} test preparation...")
         test_runner = create_test_instance(qconf.test_name, qconf.test_args, p)
-
-        # p.cmd("mkdir -p ~/avocado/job-results/latest")
-        # p.cmd("echo Hello world > ~/avocado/job-results/latest/log.txt")
+        test_runner.parse_args()
 
         test_runner.setup()
         test_runner.test()
