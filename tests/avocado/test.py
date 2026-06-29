@@ -2,22 +2,47 @@ import logging
 from lib.application_tests.base import GenericTest
 
 class AvocadoTest(GenericTest):
+
+    SUPPORTED_FS = ['ext4', 'xfs', 'btrfs']
+
     def __init__(self, name, test_args, p):
-        # TODO: add comment regarding what the test_args format is
         super().__init__(name, test_args, p)
 
+    def parse_args(self):
+        """
+        Parse and validate avocado test arguments.
+
+        Required args:
+        - fs_type: Filesystem type (ext2, ext4, xfs, btrfs)
+        - config: Path to YAML config file
+
+        """
+        if 'fs_type' not in self.test_args:
+            raise ValueError("Missing required argument: fs_type")
+        if 'config' not in self.test_args:
+            raise ValueError("Missing required argument: config")
+
+        fs_type = self.test_args['fs_type']
+        if fs_type not in self.SUPPORTED_FS:
+            raise ValueError(
+                f"Invalid fs_type '{fs_type}'. "
+                f"Must be one of: {', '.join(self.SUPPORTED_FS)}"
+            )
+
+        self.parsed_args['fs_type'] = fs_type
+        self.parsed_args['config'] = self.test_args['config']
+
     def setup(self):
-        logging.info(f"Overriding setup() of GenericTest")
+        logging.info(f"Setting up avocado test")
         self.p.cmd("make prepare")
 
     def test(self):
-        logging.info(f"Overriding test() of GenericTest")
+        logging.info(f"Running avocado test")
 
-        fs = self.test_args.split(' ')[0]
-        config = self.test_args.split(' ')[1]
+        fs = self.parsed_args['fs_type']
+        config = self.parsed_args['config']
 
-        self.p.cmd(f"make test FS={fs} CONFIG={config}")
-        #self.p.cmd("cat /root/avocado/job-results/job.log")
+        self.p.cmd(f'make test FS={fs} CONFIG="{config}"')
 
     def collect_logs(self, output_dir):
         """
