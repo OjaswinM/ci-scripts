@@ -24,6 +24,8 @@ fi
 # avocado setup
 python3 -m venv venv
 source venv/bin/activate
+pip3 install --upgrade pip wheel
+pip3 install "setuptools<72" # Use <72 to ensure it is compatible with avocado
 pip3 install avocado-framework
 pip3 install avocado-framework-plugin-varianter-yaml-to-mux
 
