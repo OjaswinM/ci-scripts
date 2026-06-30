@@ -35,7 +35,29 @@ tarball=$name.zip
 #url=https://github.com/avocado-framework-tests/avocado-misc-tests/archive/refs/heads/master.zip
 url=https://github.com/OjaswinM/avocado-misc-tests/archive/refs/heads/master.zip
 
-curl -L -o $tarball.tmp $url
-mv $tarball.tmp $tarball
+# Retry download up to 3 times with timeout
+max_retries=3
+retry_count=0
+while [ $retry_count -lt $max_retries ]; do
+    if curl -L --connect-timeout 30 --max-time 300 -o $tarball.tmp $url; then
+        # Validate download is a valid zip file (check for PK signature)
+        if file $tarball.tmp | grep -q "Zip archive"; then
+            mv $tarball.tmp $tarball
+            break
+        else
+            echo "Downloaded file is not a valid zip archive, retrying..." >&2
+            rm -f $tarball.tmp
+        fi
+    fi
+    retry_count=$((retry_count + 1))
+    if [ $retry_count -lt $max_retries ]; then
+        echo "Download failed, retrying ($retry_count/$max_retries)..." >&2
+        sleep 5
+    else
+        echo "Failed to download after $max_retries attempts" >&2
+        exit 1
+    fi
+done
+
 unzip $tarball
 cd $name-master
