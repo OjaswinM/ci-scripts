@@ -29,6 +29,6 @@ def main():
 
     qconf.apply_defaults()
 
-    return qemu_main(qconf)
+    return qemu_main(qconf, test_runner)
 
 sys.exit(0 if main() else 1)

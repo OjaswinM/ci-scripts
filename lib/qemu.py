@@ -641,7 +641,7 @@ def qemu_net_setup(p):
     p.cmd('ip route show')
 
 
-def qemu_main(qconf):
+def qemu_main(qconf, test_runner=None):
     if qconf.expected_release is None or qconf.vmlinux is None:
         return False
 
@@ -744,8 +744,12 @@ def qemu_main(qconf):
             p.cmd(f'dnf update -y; dnf install -y make zip unzip')
 
         logging.info(f"Starting {qconf.test_name} test preparation...")
-        test_runner = create_test_instance(qconf.test_name, qconf.test_args, p)
-        test_runner.parse_args()
+        if test_runner is None:
+            test_runner = create_test_instance(qconf.test_name, qconf.test_args, p)
+            test_runner.parse_args()
+        else:
+            # Update pexpect helper for existing test_runner (created in preboot)
+            test_runner.p = p
 
         test_runner.setup()
         test_runner.test()
