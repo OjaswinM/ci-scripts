@@ -36,6 +36,18 @@ class AvocadoTest(GenericTest):
         logging.info(f"Setting up avocado test")
         self.p.cmd("make prepare")
 
+        # Check if preparation succeeded by looking for success marker
+        self.p.send("test -f /tmp/avocado-prepare-success && cat /tmp/avocado-prepare-success")
+        idx = self.p.expect([r'SUCCESS\r', self.p.prompt])
+        self.p.expect_prompt()
+
+        if idx == 0:
+            logging.info("Avocado test preparation completed successfully")
+            return True
+        else:
+            logging.error("Avocado test preparation failed - success marker not found")
+            return False
+
     def test(self):
         logging.info(f"Running avocado test")
 

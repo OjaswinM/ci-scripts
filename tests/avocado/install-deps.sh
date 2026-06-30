@@ -61,3 +61,6 @@ done
 
 unzip $tarball
 cd $name-master
+
+# Write success marker
+echo "SUCCESS" > /tmp/avocado-prepare-success
