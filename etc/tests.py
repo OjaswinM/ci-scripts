@@ -178,9 +178,9 @@ def full_compile_test(args, suite=None):
 
     k = suite.add_kernel
 
-    ######################################### 
+    #########################################
     # Clang builds
-    ######################################### 
+    #########################################
     image = clang_image(images)
     if image:
         k('ppc64le_guest_defconfig+clang', image, merge_config=guest_configs, clang=True)
@@ -193,9 +193,9 @@ def full_compile_test(args, suite=None):
         k('mpc885_ads_defconfig+clang', image, clang=True)
         k('ppc44x_defconfig+clang', image, clang=True)
 
-    ######################################### 
+    #########################################
     # Sparse builds
-    ######################################### 
+    #########################################
     image = sparse_image(images)
     if image:
         k('ppc64le_defconfig+sparse', image, sparse=True)
@@ -207,9 +207,9 @@ def full_compile_test(args, suite=None):
 
     # GCC builds & boots
     for image in images:
-        ######################################### 
+        #########################################
         # Major platforms coverage
-        ######################################### 
+        #########################################
         # BOOK3S64 && LITTLE_ENDIAN, PSERIES and POWERNV
         k('ppc64le_guest_defconfig', image, merge_config=guest_configs)
         # BOOK3S64 && BIG_ENDIAN
@@ -242,9 +242,9 @@ def full_compile_test(args, suite=None):
         # 8xx
         k('mpc885_ads_defconfig', image)
 
-        ######################################### 
+        #########################################
         # allyes/no/mod
-        ######################################### 
+        #########################################
         if image.startswith('korg@'):
             no_gcc_plugins = ['gcc-plugins-n']
         else:
@@ -273,13 +273,13 @@ def full_compile_test(args, suite=None):
         # FIXME Broken due to start_text_address problems
         # k('ppc64_book3e_allmodconfig', allyesmod_image, merge_config=no_gcc_plugins)
 
-        ######################################### 
+        #########################################
         # specific machine/platform configs
-        ######################################### 
+        #########################################
         # PSERIES (BE)
-        k('pseries_defconfig', image),  
+        k('pseries_defconfig', image),
         # PSERIES (LE)
-        k('pseries_le_defconfig', image),  
+        k('pseries_le_defconfig', image),
         # Options for old LPARs
         k('ppc64le_guest_defconfig+legacy', image, merge_config=legacy_guest_configs)
         # POWERNV
@@ -296,9 +296,9 @@ def full_compile_test(args, suite=None):
         # PPC_86xx (BOOK3S_32)
         k('mpc86xx_smp_defconfig', image)
 
-        ######################################### 
+        #########################################
         # specific features
-        ######################################### 
+        #########################################
         # PPC_8xx + PPC16K_PAGES
         k('mpc885_ads_defconfig+16k', image, merge_config=['16k-pages'])
 
@@ -307,9 +307,9 @@ def full_compile_test(args, suite=None):
         k('ppc64_guest_defconfig+4k', image, merge_config=guest_configs_4k)
         k('g5_defconfig+4k', image, merge_config=g5_configs + ['4k-pages'])
 
-        ######################################### 
+        #########################################
         # specific enabled features
-        ######################################### 
+        #########################################
         for feature in ['preempt', 'compat', 'lockdep', 'reltest', 'opt-for-size']:
             k(f'ppc64_defconfig+{feature}',   image, merge_config=[f'{feature}-y'])
             k(f'ppc64le_defconfig+{feature}', image, merge_config=[f'{feature}-y'])
@@ -323,15 +323,15 @@ def full_compile_test(args, suite=None):
         # FIXME doesn't build
         # k('ppc64_defconfig+pcrel',   pcrel_image, merge_config=['pcrel-y'])
 
-        ######################################### 
+        #########################################
         # specific disabled features
-        ######################################### 
+        #########################################
         for feature in ['radix', 'hpt-mmu']:
             feat_image = image
             if feature == 'hpt-mmu' and not image_at_least(image, ['fedora@36', 'korg@12.1.0']):
                 # Only GCC >= 12 can build HPT=n because it needs -mcpu=power10
                 feat_image = 'korg@12.1.0'
-            
+
             k(f'ppc64_defconfig+no{feature}',   feat_image, merge_config=[f'{feature}-n'])
             k(f'ppc64le_defconfig+no{feature}', feat_image, merge_config=[f'{feature}-n'])
             k(f'ppc64_defconfig+no{feature}+4k',   feat_image, merge_config=[f'{feature}-n', '4k-pages'])
@@ -343,9 +343,9 @@ def full_compile_test(args, suite=None):
             k(f'ppc64_defconfig+no{feature}',   image, merge_config=[f'{feature}-n'])
             k(f'ppc64le_defconfig+no{feature}', image, merge_config=[f'{feature}-n'])
 
-    ######################################### 
+    #########################################
     # selftests
-    ######################################### 
+    #########################################
     for version in ['16.04', '18.04', '20.04', '22.04', '22.10']:
         image = f'ubuntu@{version}'
         for subarch in ['ppc64', 'ppc64le']:

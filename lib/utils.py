@@ -196,7 +196,7 @@ def filter_log_warnings(infile, outfile, extra_patterns=[]):
 
         if ignoring:
             continue
-            
+
         if suppress(line):
             continue
 

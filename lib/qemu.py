@@ -265,7 +265,7 @@ class QemuConfig:
         if not self.expected_release:
             logging.error("Couldn't find kernel.release")
             return
-            
+
         if not self.vmlinux:
             logging.error("Can't find kernel vmlinux")
             return
@@ -273,7 +273,7 @@ class QemuConfig:
         if not self.root_disk_path:
             logging.error("Couldn't locate root disks")
             return
- 
+
         if self.machine_is('pseries'):
             if self.accel == 'tcg':
                 self.machine_caps += ['cap-htm=off']
@@ -445,7 +445,7 @@ class QemuConfig:
                 raise
 
             self.test_drive = self.add_drive(f"file={self.test_tarball},format=raw,readonly=on")
-            
+
 
     def add_drive(self, args):
         drive_id = self.next_drive
@@ -461,7 +461,7 @@ class QemuConfig:
 
         # Convert to drive letter
         return chr(ord('a') + drive_id)
-        
+
     def prepare_cloud_image(self):
         if self.cloud_image is None:
             return

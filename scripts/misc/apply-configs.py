@@ -7,12 +7,12 @@
 # $ make ppc64le_defconfig
 # $ ~/ci-scripts/scripts/misc/apply-configs.py 4k-pages compat-y
 # $ make olddefconfig
-# 
+#
 # Or a group of configs defined in configs.py:
 #
 # $ ~/ci-scripts/scripts/misc/apply-configs.py guest_configs
 
- 
+
 from subprocess import run
 import os, sys
 

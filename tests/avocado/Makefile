@@ -4,7 +4,7 @@ help:
 	@echo "  prepare 	# download and install dependencies"
 	@echo "  test 		# builds the tests"
 
-prepare: 
+prepare:
 	@./install-deps.sh
 
 test:

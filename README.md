@@ -13,7 +13,7 @@ Quick start
 
 Make sure you can run containers.
 
-On Fedora the scripts will use `podman`, on Ubuntu they use `docker`, 
+On Fedora the scripts will use `podman`, on Ubuntu they use `docker`,
 
 You need a Linux source tree, which hasn't been built in. You can make sure it's
 clean with `make mrproper`, or clone a fresh tree.
@@ -87,7 +87,7 @@ There are images for various toolchains, they are encoded in the distro name/ver
  - `fedora@34`: Fedora 34, gcc 11.2.1, binutils 2.35.2, clang 12.0.1
  - `fedora@33`: Fedora 33, gcc 10.2.1, binutils 2.35.1, clang 11.0.0
  - `fedora@31`: Fedora 31, gcc 9.2.1, binutils 2.32, clang 9.0.1
- 
+
 Only the Ubuntu toolchains can build the selftests.
 
 Building selftests

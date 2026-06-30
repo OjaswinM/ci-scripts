@@ -43,7 +43,7 @@ def run_selftest_collections(qconf, p, arg, check=True):
     collections = []
     for name in arg.split(' '):
         collections.append(name)
-        
+
     return __run_selftests(qconf, p, collections=collections, check=check)
 
 def run_selftest_collections_nocheck(qconf, p, arg):

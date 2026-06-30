@@ -144,7 +144,7 @@ class KernelBuild:
             l.append('sparse')
         if self.modules:
             l.append('modules')
-            
+
         return '/'.join(l)
 
 
@@ -820,7 +820,7 @@ def run_tests(state, boot, host_dir):
         if not test.run:
             # Skip tests that only need to do setup, eg. qemu tests
             continue
-        
+
         if state.tfilter and not filter_matches(test.name, state.tfilter):
             logging.debug(f'Skipping test {test.name} due to filter')
             continue
