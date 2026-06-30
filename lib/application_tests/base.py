@@ -65,6 +65,7 @@ class GenericTest:
 
     def setup(self):
         self.p.cmd("make prepare")
+        return True
 
     def test(self, *args, **kwargs):
         """

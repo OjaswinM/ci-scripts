@@ -751,7 +751,9 @@ def qemu_main(qconf, test_runner=None):
             # Update pexpect helper for existing test_runner (created in preboot)
             test_runner.p = p
 
-        test_runner.setup()
+        if not test_runner.setup():
+            logging.error(f"Test preparation failed for {qconf.test_name}")
+            return False
         test_runner.test()
 
         # avocado will copy xfstest logs to qconf.test_output_dir. All we need
