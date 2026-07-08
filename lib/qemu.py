@@ -731,7 +731,12 @@ def qemu_main(qconf, test_runner=None):
     if qconf.test_tarball:
         # extract the test folder in qemu
         p.cmd('mkdir -p /var/tmp/test')
-        p.cmd(f'cd /var/tmp/test; cat /dev/vd{qconf.test_drive} | tar  -xf -; cd {qconf.test_name}')
+        # Verify device exists and copy to file for validation
+        p.cmd(f'ls -la /dev/vd{qconf.test_drive}')
+        p.cmd(f'cat /dev/vd{qconf.test_drive} > /var/tmp/test/test.tar')
+        p.cmd('file /var/tmp/test/test.tar')
+        # Extract the verified tarball
+        p.cmd('cd /var/tmp/test && tar -xf test.tar')
         p.cmd(f'cd /var/tmp/test/{qconf.test_name}')
 
         #remove the temp tarball once copied in VM
