@@ -19,6 +19,7 @@ def main():
     qconf.configure_from_env()
     qconf.configure_from_args(sys.argv[1:])
 
+    test_runner = None
     # Allow test to validate args and modify qemu config before applying defaults
     # (e.g., add custom mounts)
     if qconf.test_name:
