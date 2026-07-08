@@ -55,6 +55,7 @@ class QemuConfig:
         self.test_base_dir = None
         self.test_name = None
         self.test_tarball = None
+        self.test_output_dir = None
 
         # Detect root disks if we're called from scripts/boot/qemu-xxx
         base = os.path.dirname(sys.argv[0])
