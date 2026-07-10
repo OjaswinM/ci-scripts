@@ -437,10 +437,29 @@ class QemuConfig:
             tar_path = os.path.join("/tmp", tar_filename)
 
             try:
+                logging.info(f"DEBUG: Contents of test directory '{test_dir}' before archiving:")
+                for root, dirs, files in os.walk(test_dir):
+                    level = root.replace(test_dir, '').count(os.sep)
+                    indent = ' ' * 2 * level
+                    logging.info(f"{indent}{os.path.basename(root)}/")
+                    subindent = ' ' * 2 * (level + 1)
+                    for file in files[:20]:  # Limit to first 20 files per directory
+                        logging.info(f"{subindent}{file}")
+                    if len(files) > 20:
+                        logging.info(f"{subindent}... and {len(files) - 20} more files")
+                
                 with tarfile.open(tar_path, "w") as tar:
                     tar.add(test_dir, arcname=self.test_name)
                 self.test_tarball = tar_path
                 logging.info(f"Test directory '{test_dir}' archived to '{self.test_tarball}'")
+                
+                logging.info(f"DEBUG: Verifying tarball contents (first 50 entries):")
+                with tarfile.open(tar_path, "r") as tar:
+                    members = tar.getmembers()[:50]
+                    for member in members:
+                        logging.info(f"  {member.name} ({'dir' if member.isdir() else 'file'}, {member.size} bytes)")
+                    if len(tar.getmembers()) > 50:
+                        logging.info(f"  ... and {len(tar.getmembers()) - 50} more entries")
             except Exception as e:
                 logging.error(f"Failed to create tarball: {e}")
                 raise
