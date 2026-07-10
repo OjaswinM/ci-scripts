@@ -754,6 +754,9 @@ def qemu_main(qconf, test_runner=None):
         p.cmd(f'ls -la /dev/vd{qconf.test_drive}')
         p.cmd(f'cat /dev/vd{qconf.test_drive} > /var/tmp/test/test.tar')
         p.cmd('file /var/tmp/test/test.tar')
+        # List tarball contents before extraction
+        p.cmd('echo "DEBUG: Tarball contents (first 50 entries):"')
+        p.cmd('cd /var/tmp/test && tar -tf test.tar | head -50')
         # Extract the verified tarball
         p.cmd('cd /var/tmp/test && tar -xf test.tar')
         p.cmd(f'cd /var/tmp/test/{qconf.test_name}')
