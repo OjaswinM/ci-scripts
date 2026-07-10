@@ -740,6 +740,14 @@ def qemu_main(qconf, test_runner=None):
             p.send(f'[ -x /mnt/host{i}/{qconf.host_command} ] && (cd /mnt/host{i} && ./{qconf.host_command})')
             p.expect_prompt(timeout=None) # no timeout
 
+
+        # set up package manager and install make
+        if 'ubuntu' in qconf.cloud_image or 'debian' in qconf.cloud_image:
+            p.cmd(f'apt update -y')
+            p.cmd(f'apt install -y make zip unzip tar')
+        elif 'fedora' in qconf.cloud_image:
+            p.cmd(f'dnf update -y; dnf install -y make zip unzip tar')
+
     guest_output_dir = ""
 
     if qconf.test_output_dir:
@@ -763,13 +771,6 @@ def qemu_main(qconf, test_runner=None):
 
         #remove the temp tarball once copied in VM
         atexit.register(lambda: os.unlink(qconf.test_tarball))
-
-        # set up package manager and install make
-        if 'ubuntu' in qconf.cloud_image or 'debian' in qconf.cloud_image:
-            p.cmd(f'apt update -y')
-            p.cmd(f'apt install -y make zip unzip')
-        elif 'fedora' in qconf.cloud_image:
-            p.cmd(f'dnf update -y; dnf install -y make zip unzip')
 
         logging.info(f"Starting {qconf.test_name} test preparation...")
         if test_runner is None:
