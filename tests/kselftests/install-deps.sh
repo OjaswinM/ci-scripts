@@ -48,3 +48,4 @@ else
 fi
 
 echo "Dependencies installed successfully"
+exit 0
