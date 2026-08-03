@@ -47,6 +47,18 @@ class KselftestsTest(GenericTest):
         logging.info(f"Setting up kselftests")
         self.p.cmd("make prepare")
 
+        # Check if preparation succeeded by looking for success marker
+        self.p.send("test -f /tmp/kselftests-prepare-success && cat /tmp/kselftests-prepare-success")
+        idx = self.p.expect([r'SUCCESS\r', self.p.prompt])
+        self.p.expect_prompt()
+
+        if idx == 0:
+            logging.info("Kselftests preparation completed successfully")
+            return True
+        else:
+            logging.error("Kselftests preparation failed - success marker not found")
+            return False
+
     def test(self):
         logging.info(f"Running kselftests")
 

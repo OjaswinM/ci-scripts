@@ -48,4 +48,8 @@ else
 fi
 
 echo "Dependencies installed successfully"
+
+# Create success marker for test.py to verify
+echo "SUCCESS" > /tmp/kselftests-prepare-success
+
 exit 0
